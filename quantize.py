@@ -42,7 +42,7 @@ class QuantLSTM(QuantizerBase, tf.keras.layers.LSTM):
 def hard_sigmoid(x):
     return tf.clip_by_value((x + 1.)/2., 0, 1)
     
- def make_clips(a, n):
+def make_clips(a, n):
     temp = []
     for i in range(n):
         m = 2*i + 1
