@@ -10,5 +10,5 @@ Contains helper code to quantize an lstm and to modify the bits used in quantiza
 ## run.py
 Contains code for a MLP on the MNIST dataset. To change the number of bits used, change the variables at the top of the file. By default, it runs with 1 bit.
 
-## lstm.py
+## lstm_binary.py
 Contains code for a quantized LSTM on IMDb data for sentiment analysis.
