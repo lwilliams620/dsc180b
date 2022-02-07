@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     cv = quantize.make_clips(1, 1)
 
-    # Define the Keras model
+    # Build LSTM
     lstm = Sequential()
     lstm.add(Embedding(num_words, embedding_output_dims, input_length=max_length))
     lstm.add(quantize.QuantLSTM(10, 
@@ -36,16 +36,10 @@ if __name__ == "__main__":
         recurrent_constraint=larq.constraints.WeightClip(clip_value=1)))
     lstm.add(larq.layers.QuantDense(units=1, kernel_quantizer=larq.quantizers.SteSign(clip_value=cv), kernel_constraint=larq.constraints.WeightClip(clip_value=1)))
 
-    # Compile the model
     lstm.compile(loss=BinaryCrossentropy(), optimizer=Adam(), metrics=['accuracy'])
 
-    # Give a summary
-    lstm.summary()
-
-    # Train the model
     lstm.fit(X_train_pad, y_train, batch_size=batch_size, epochs=num_epochs, verbose=1, validation_split=1/5)
 
-    # Test the model after training
     results = model.evaluate(X_test_pad, y_test, verbose=False)
     print('Loss: ' + str(results[0]))
     print('Accuracy: ' + str(results[1]))
