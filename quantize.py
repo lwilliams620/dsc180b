@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+import larq
 from larq.layers_base import QuantizerBase
 from larq import context, math, utils
 
@@ -64,7 +65,7 @@ def ste_sign(x: tf.Tensor, clip_value: list = [1]) -> tf.Tensor:
     @tf.custom_gradient
     def _call(x):
         def grad(dy):
-            return _clipped_gradient(x, dy, clip_value[-1])
+            return larq.quantizers._clipped_gradient(x, dy, clip_value[-1])
 
         if len(clip_value) == 1:
             return math.sign(x)*clip_value[0], grad
