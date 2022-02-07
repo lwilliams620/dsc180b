@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     lstm.fit(X_train_pad, y_train, batch_size=batch_size, epochs=num_epochs, verbose=1, validation_split=1/5)
 
-    results = model.evaluate(X_test_pad, y_test, verbose=False)
+    results = results.evaluate(X_test_pad, y_test, verbose=False)
     print('Loss: ' + str(results[0]))
     print('Accuracy: ' + str(results[1]))
     print('Error: ' + str(1-results[1]))
