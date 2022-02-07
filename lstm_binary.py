@@ -23,18 +23,16 @@ if __name__ == "__main__":
     X_train_pad = pad_sequences(X_train, maxlen=max_length, value = 0.0) # 0.0 because it corresponds with <PAD>
     X_test_pad = pad_sequences(X_test, maxlen=max_length, value = 0.0) # 0.0 because it corresponds with <PAD>
 
-    cv = quantize.make_clips(1, 1)
-
     # Build LSTM
     lstm = Sequential()
     lstm.add(Embedding(num_words, embedding_output_dims, input_length=max_length))
     lstm.add(quantize.QuantLSTM(10, 
         activation='hard_tanh', 
         recurrent_activation=quantize.hard_sigmoid, 
-        kernel_quantizer=larq.quantizers.SteSign(clip_value=cv),
+        kernel_quantizer=larq.quantizers.SteSign(clip_value=1),
         kernel_constraint=larq.constraints.WeightClip(clip_value=1),
         recurrent_constraint=larq.constraints.WeightClip(clip_value=1)))
-    lstm.add(larq.layers.QuantDense(units=1, kernel_quantizer=larq.quantizers.SteSign(clip_value=cv), kernel_constraint=larq.constraints.WeightClip(clip_value=1)))
+    lstm.add(larq.layers.QuantDense(units=1, kernel_quantizer=larq.quantizers.SteSign(clip_value=1), kernel_constraint=larq.constraints.WeightClip(clip_value=1)))
 
     lstm.compile(loss=BinaryCrossentropy(), optimizer=Adam(), metrics=['accuracy'])
 

@@ -8,6 +8,8 @@ import quantize
 m = 1 # maximum value for weights
 b = 1 # number of bits to use
 
+larq.quantizers.ste_sign = quantize.ste_sign
+
 if __name__ == "__main__":
     # BN parameters
     batch_size = 100
