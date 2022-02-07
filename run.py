@@ -5,6 +5,9 @@ import numpy as np
 np.random.seed(1234)
 import quantize
 
+m = 1 # maximum value for weights
+b = 1 # number of bits to use
+
 if __name__ == "__main__":
     # BN parameters
     batch_size = 100
@@ -53,15 +56,15 @@ if __name__ == "__main__":
     mlp.add(tf.keras.layers.InputLayer(input_shape=(28*28)))
     mlp.add(tf.keras.layers.Dropout(rate=dropout_in))
 
-    cv = quantize.make_clips(12, 3)
+    cv = quantize.make_clips(m, b)
     
     for i in range(n_hidden_layers):
-        mlp.add(larq.layers.QuantDense(units=num_units, kernel_quantizer=larq.quantizers.SteSign(clip_value=cv), kernel_constraint=larq.constraints.WeightClip(clip_value=1)))
+        mlp.add(larq.layers.QuantDense(units=num_units, kernel_quantizer=larq.quantizers.SteSign(clip_value=cv), kernel_constraint=larq.constraints.WeightClip(clip_value=m)))
         mlp.add(tf.keras.layers.BatchNormalization(momentum=alpha, epsilon=epsilon))
         mlp.add(tf.keras.layers.Activation(activation='hard_tanh'))
         mlp.add(tf.keras.layers.Dropout(rate=dropout_hidden))
     
-    mlp.add(larq.layers.QuantDense(units=10, kernel_quantizer=larq.quantizers.SteSign(clip_value=cv), kernel_constraint=larq.constraints.WeightClip(clip_value=1)))
+    mlp.add(larq.layers.QuantDense(units=10, kernel_quantizer=larq.quantizers.SteSign(clip_value=cv), kernel_constraint=larq.constraints.WeightClip(clip_value=m)))
     mlp.add(tf.keras.layers.BatchNormalization(momentum=alpha, epsilon=epsilon))
 
     mlp.compile(loss="squared_hinge", optimizer=tf.keras.optimizers.Adam(learning_rate=LR), metrics=['accuracy'])
