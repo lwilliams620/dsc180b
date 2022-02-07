@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     # Pad all sequences
     X_train_pad = pad_sequences(X_train, maxlen=max_length, value = 0.0) # 0.0 because it corresponds with <PAD>
-    X_test_pad = pad_sequences(x_test, maxlen=max_length, value = 0.0) # 0.0 because it corresponds with <PAD>
+    X_test_pad = pad_sequences(X_test, maxlen=max_length, value = 0.0) # 0.0 because it corresponds with <PAD>
 
     cv = quantize.make_clips(1, 1)
 
