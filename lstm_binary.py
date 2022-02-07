@@ -8,52 +8,45 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 import larq
 import quantize
 
-# Model configuration
-additional_metrics = ['accuracy']
-batch_size = 128
-embedding_output_dims = 15
-loss_function = BinaryCrossentropy()
-max_sequence_length = 300
-num_distinct_words = 5000
-number_of_epochs = 5
-optimizer = Adam()
-validation_split = 0.20
-verbosity_mode = 1
+if __name__ == "__main__":
+    # Parameters
+    batch_size = 128
+    embedding_output_dims = 15
+    max_length = 300
+    num_words = 5000
+    num_epochs = 5
 
+    # Load dataset
+    (X_train, y_train), (X_test, y_test) = imdb.load_data(num_words=num_words)
 
-# Disable eager execution
-tf.compat.v1.disable_eager_execution()
+    # Pad all sequences
+    X_train_pad = pad_sequences(X_train, maxlen=max_length, value = 0.0) # 0.0 because it corresponds with <PAD>
+    X_test_pad = pad_sequences(x_test, maxlen=max_length, value = 0.0) # 0.0 because it corresponds with <PAD>
 
-# Load dataset
-(x_train, y_train), (x_test, y_test) = imdb.load_data(num_words=num_distinct_words)
+    cv = quantize.make_clips(1, 1)
 
-# Pad all sequences
-padded_inputs = pad_sequences(x_train, maxlen=max_sequence_length, value = 0.0) # 0.0 because it corresponds with <PAD>
-padded_inputs_test = pad_sequences(x_test, maxlen=max_sequence_length, value = 0.0) # 0.0 because it corresponds with <PAD>
+    # Define the Keras model
+    lstm = Sequential()
+    lstm.add(Embedding(num_words, embedding_output_dims, input_length=max_length))
+    lstm.add(quantize.QuantLSTM(10, 
+        activation='hard_tanh', 
+        recurrent_activation=quantize.hard_sigmoid, 
+        kernel_quantizer=larq.quantizers.SteSign(clip_value=cv),
+        kernel_constraint=larq.constraints.WeightClip(clip_value=1),
+        recurrent_constraint=larq.constraints.WeightClip(clip_value=1)))
+    lstm.add(larq.layers.QuantDense(units=1, kernel_quantizer=larq.quantizers.SteSign(clip_value=cv), kernel_constraint=larq.constraints.WeightClip(clip_value=1)))
 
-cv = quantize.make_clips(1, 3)
+    # Compile the model
+    lstm.compile(loss=BinaryCrossentropy(), optimizer=Adam(), metrics=['accuracy'])
 
-# Define the Keras model
-model = Sequential()
-model.add(Embedding(num_distinct_words, embedding_output_dims, input_length=max_sequence_length))
-model.add(quantize.QuantLSTM(10, 
-    activation='hard_tanh', 
-    recurrent_activation=quantize.hard_sigmoid, 
-    kernel_quantizer=larq.quantizers.SteSign(clip_value=cv),
-    kernel_constraint=larq.constraints.WeightClip(clip_value=1),
-    recurrent_constraint=larq.constraints.WeightClip(clip_value=1)))
-#model.add(Dense(1, activation='sigmoid'))
-model.add(larq.layers.QuantDense(units=1, kernel_quantizer=larq.quantizers.SteSign(clip_value=cv), kernel_constraint=larq.constraints.WeightClip(clip_value=1)))
+    # Give a summary
+    lstm.summary()
 
-# Compile the model
-model.compile(optimizer=optimizer, loss=loss_function, metrics=additional_metrics)
+    # Train the model
+    lstm.fit(X_train_pad, y_train, batch_size=batch_size, epochs=num_epochs, verbose=1, validation_split=1/5)
 
-# Give a summary
-model.summary()
-
-# Train the model
-history = model.fit(padded_inputs, y_train, batch_size=batch_size, epochs=number_of_epochs, verbose=verbosity_mode, validation_split=validation_split)
-
-# Test the model after training
-test_results = model.evaluate(padded_inputs_test, y_test, verbose=False)
-print(f'Test results - Loss: {test_results[0]} - Accuracy: {100*test_results[1]}%')
+    # Test the model after training
+    results = model.evaluate(X_test_pad, y_test, verbose=False)
+    print('Loss: ' + str(results[0]))
+    print('Accuracy: ' + str(results[1]))
+    print('Error: ' + str(1-results[1]))
