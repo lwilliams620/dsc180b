@@ -1,9 +1,7 @@
 import tensorflow as tf
 
-from larq import utils
-from larq.layers_base import (
-    QuantizerBase
-)
+from larq.layers_base import QuantizerBase
+from larq import context, math, utils
 
 @utils.register_keras_custom_object
 class QuantLSTM(QuantizerBase, tf.keras.layers.LSTM):
