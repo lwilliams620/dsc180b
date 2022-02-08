@@ -1,8 +1,12 @@
 # Requirements
 `pip install tensorflow==2.6`
+
 `pip install keras==2.6`
+
 `pip install numpy`
+
 `pip install packaging`
+
 
 # Instructions
 1. Pull and run the docker file `l6willia/dsc180b`
