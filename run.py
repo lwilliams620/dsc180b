@@ -35,9 +35,6 @@ if __name__ == "__main__":
     # Patience
     patience = 2
 
-    # Model and weight paths
-    model_path = "mnist_binary_model2"
-
     # Load Data
     (X_train, y_train), (X_test, y_test) = tf.keras.datasets.mnist.load_data()
 
