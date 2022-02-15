@@ -8,6 +8,8 @@ import quantize
 m = 1 # maximum value for weights
 b = 1 # number of bits to use
 
+print(f"Max val: {m}\nBits: {b}")
+
 larq.quantizers.ste_sign = quantize.ste_sign
 
 if __name__ == "__main__":
@@ -58,7 +60,7 @@ if __name__ == "__main__":
     mlp.add(tf.keras.layers.InputLayer(input_shape=(28*28)))
     mlp.add(tf.keras.layers.Dropout(rate=dropout_in))
 
-    cv = quantize.make_clips(m, b)
+    cv = quantize.make_clips(m, 2**(b-1))
     
     for i in range(n_hidden_layers):
         mlp.add(larq.layers.QuantDense(units=num_units, kernel_quantizer=larq.quantizers.SteSign(clip_value=cv), kernel_constraint=larq.constraints.WeightClip(clip_value=m)))
