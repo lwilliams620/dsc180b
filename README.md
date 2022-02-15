@@ -7,6 +7,8 @@
 
 `pip install packaging`
 
+`pip install larq`
+
 
 # Instructions
 1. Pull and run the docker file `l6willia/dsc180b`
