@@ -3,6 +3,7 @@ import tensorflow as tf
 import larq
 from larq.layers_base import QuantizerBase
 from larq import context, math, utils
+import numpy as np
 
 @utils.register_keras_custom_object
 class QuantLSTM(QuantizerBase, tf.keras.layers.LSTM):
@@ -41,35 +42,34 @@ class QuantLSTM(QuantizerBase, tf.keras.layers.LSTM):
 def hard_sigmoid(x):
     return tf.clip_by_value((x + 1.)/2., 0, 1)
     
-def make_clips(a, n):
-    temp = []
-    for i in range(n):
-        m = 2*i + 1
-        clip = (m*a) / (2*n - 1)
-        temp.append(clip)
+def make_quantize(x, a, n): # x: weight vector, a: maximum weight value, n: number of quantization points (3bits, n=8)
+    temp = tf.math.round(((x+a)/2) * (n-1)/(a)) * a/(n-1) * 2 - a
+    
+    mask = tf.greater_equal(tf.math.abs(temp), a)
+    temp = tf.where(mask, tf.math.sign(temp)*a, temp)
     return temp
 
-def make_quantize(x: tf.Tensor, clip_value: list):
-    mask = tf.less(tf.math.abs(x), (clip_value[0] + clip_value[1]) / 2)
-    temp = tf.where(mask, tf.math.sign(x)*clip_value[0], x)
-    for i in range(1, len(clip_value[:-1])):
-        upper = tf.greater_equal(tf.math.abs(temp), (clip_value[i] + clip_value[i-1]) / 2)
-        lower = tf.less(tf.math.abs(temp), (clip_value[i] + clip_value[i+1]) / 2)
-        mask = tf.math.logical_and(upper, lower)
-        temp = tf.where(mask, tf.math.sign(temp)*clip_value[i], temp)
-    mask = tf.greater_equal(tf.math.abs(temp), (clip_value[-2] + clip_value[-1]) / 2)
-    temp = tf.where(mask, tf.math.sign(temp)*clip_value[-1], temp)
-    return temp
+def _clipped_gradient(x, dy, clip_value):
+    """Calculate `clipped_gradent * dy`."""
+
+    if clip_value is None:
+        return dy
+
+    zeros = tf.zeros_like(dy)
+    mask = tf.math.less_equal(tf.math.abs(x), clip_value)
     
-def ste_sign(x: tf.Tensor, clip_value: list = [1]) -> tf.Tensor:
+    temp = tf.where(mask, dy, zeros)
+    
+    return temp
+
+def ste_sign(x: tf.Tensor, clip_value) -> tf.Tensor:
     @tf.custom_gradient
     def _call(x):
         def grad(dy):
-            return larq.quantizers._clipped_gradient(x, dy, clip_value[-1])
+            return _clipped_gradient(x, dy, clip_value[0])
+        
+        temp = make_quantize(x, clip_value[0], clip_value[1])
 
-        if len(clip_value) == 1:
-            return math.sign(x)*clip_value[0], grad
-
-        return make_quantize(x, clip_value), grad
+        return temp, grad
 
     return _call(x)
