@@ -49,24 +49,11 @@ def make_quantize(x, a, n): # x: weight vector, a: maximum weight value, n: numb
     temp = tf.where(mask, tf.math.sign(temp)*a, temp)
     return temp
 
-def _clipped_gradient(x, dy, clip_value):
-    """Calculate `clipped_gradent * dy`."""
-
-    if clip_value is None:
-        return dy
-
-    zeros = tf.zeros_like(dy)
-    mask = tf.math.less_equal(tf.math.abs(x), clip_value)
-    
-    temp = tf.where(mask, dy, zeros)
-    
-    return temp
-
 def ste_sign(x: tf.Tensor, clip_value) -> tf.Tensor:
     @tf.custom_gradient
     def _call(x):
         def grad(dy):
-            return _clipped_gradient(x, dy, clip_value[0])
+            return larq.quantizers._clipped_gradient(x, dy, clip_value[0])
         
         temp = make_quantize(x, clip_value[0], clip_value[1])
 
